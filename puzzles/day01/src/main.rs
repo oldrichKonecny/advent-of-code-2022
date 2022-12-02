@@ -1,6 +1,8 @@
 use std::collections::BinaryHeap;
+use std::time::Instant;
 
 fn main() {
+    let mut start = Instant::now();
     let mut heap = include_str!("../input.txt")
         .split("\n\n")
         .map(parse_and_sum_numbers)
@@ -11,6 +13,12 @@ fn main() {
     let top3 = heap.pop().unwrap() + heap.pop().unwrap() + heap.pop().unwrap();
 
     println!("Second part: {}", top3);
+
+    let end = start.elapsed();
+    println!("Duration:");
+    println!("\t{} ms", end.as_millis());
+    println!("\t{} us", end.as_micros());
+    println!("\t{} ns", end.as_nanos());
 }
 
 fn parse_and_sum_numbers(lines: &str) -> u64 {
