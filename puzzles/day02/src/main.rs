@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 fn main() {
-    let mut start = Instant::now();
+    let start = Instant::now();
     let input = include_str!("../input.txt");
 
     println!("First part: {}", first_solution(input));
@@ -15,7 +15,8 @@ fn main() {
 }
 
 fn second_solution(input: &str) -> u64 {
-    input.lines()
+    input
+        .lines()
         .map(|l| {
             let mut split = l.split(" ");
             let mut opponent = split.next().expect("Cannot get first letter");
@@ -34,7 +35,8 @@ fn second_solution(input: &str) -> u64 {
 }
 
 fn first_solution(input: &str) -> u64 {
-    input.lines()
+    input
+        .lines()
         .map(|l| {
             let mut split = l.split(" ");
             let opponent = split.next().expect("Cannot get first letter");
@@ -58,7 +60,7 @@ impl Outcome {
             "X" => Outcome::Lose,
             "Y" => Outcome::Draw,
             "Z" => Outcome::Win,
-            _ => panic!("Cannot parse letter '{}' to Outcome", letter)
+            _ => panic!("Cannot parse letter '{}' to Outcome", letter),
         }
     }
 
@@ -84,7 +86,7 @@ impl Choices {
             "A" | "X" => Choices::Rock,
             "B" | "Y" => Choices::Paper,
             "C" | "Z" => Choices::Scissors,
-            _ => panic!("Cannot parse letter '{}' to Choices", letter)
+            _ => panic!("Cannot parse letter '{}' to Choices", letter),
         }
     }
 
@@ -118,11 +120,12 @@ fn compute_outcome(my_choice: &Choices, opponent_choice: &Choices) -> u8 {
         return my_choice.value() + 3;
     }
     match (my_choice, opponent_choice) {
-        (Choices::Rock, Choices::Scissors) | (Choices::Paper, Choices::Rock) | (Choices::Scissors, Choices::Paper) => my_choice.value() + 6,
-        _ => my_choice.value()
+        (Choices::Rock, Choices::Scissors)
+        | (Choices::Paper, Choices::Rock)
+        | (Choices::Scissors, Choices::Paper) => my_choice.value() + 6,
+        _ => my_choice.value(),
     }
 }
-
 
 #[cfg(test)]
 mod tests {
