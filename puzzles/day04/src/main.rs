@@ -1,3 +1,4 @@
+use std::ops::RangeInclusive;
 use std::time::Instant;
 
 fn main() {
@@ -17,21 +18,20 @@ fn main() {
     println!("\t{} ns", end.as_nanos());
 }
 
-fn first_solution(pairs: &[((u32, u32), (u32, u32))]) -> usize {
+fn first_solution(pairs: &[(RangeInclusive<u32>, RangeInclusive<u32>)]) -> usize {
     pairs
         .iter()
         .filter(|(left, right)| {
-            (left.0 >= right.0 && left.1 <= right.1) || (right.0 >= left.0 && right.1 <= left.1)
+            (left.start() >= right.start() && left.end() <= right.end())
+                || (right.start() >= left.start() && right.end() <= left.end())
         })
         .count()
 }
 
-fn second_solution(pairs: &[((u32, u32), (u32, u32))]) -> usize {
+fn second_solution(pairs: &[(RangeInclusive<u32>, RangeInclusive<u32>)]) -> usize {
     pairs
         .iter()
         .filter(|(left, right)| {
-            let left = left.0..=left.1;
-            let right = right.0..=right.1;
             left.contains(right.start())
                 || left.contains(right.end())
                 || right.contains(left.start())
@@ -40,12 +40,12 @@ fn second_solution(pairs: &[((u32, u32), (u32, u32))]) -> usize {
         .count()
 }
 
-fn parse_line(line: &str) -> ((u32, u32), (u32, u32)) {
-    fn parse_pair(pair: &str) -> (u32, u32) {
+fn parse_line(line: &str) -> (RangeInclusive<u32>, RangeInclusive<u32>) {
+    fn parse_pair(pair: &str) -> RangeInclusive<u32> {
         let mut nums = pair.split("-");
         let first = nums.next().unwrap().parse().unwrap();
         let sec = nums.next().unwrap().parse().unwrap();
-        (first, sec)
+        first..=sec
     }
     let mut pairs = line.split(",");
     let first = parse_pair(pairs.next().unwrap());
