@@ -1,3 +1,5 @@
+use regex::Regex;
+
 #[cfg(not(target_os = "windows"))]
 const EMPTY_LINE_PATTERN: &str = "\n\n";
 #[cfg(target_os = "windows")]
@@ -10,7 +12,9 @@ fn main() {
         .split_once(EMPTY_LINE_PATTERN)
         .unwrap();
     let mut crates = parse_crates(crates);
-    println!("{:?}", crates);
+    let instructions = parse_instruction(instruction);
+
+    println!("{:?}", instructions);
 }
 
 fn parse_crates(crates: &str) -> Vec<Vec<char>> {
@@ -33,9 +37,22 @@ fn parse_crates(crates: &str) -> Vec<Vec<char>> {
 }
 
 fn parse_instruction(instructions: &str) -> Vec<Instruction> {
-    todo!()
+    instructions
+        .lines()
+        .map(|line| {
+            let captured = REGEX.captures_iter(line).next().unwrap();
+            Instruction {
+                move_count: captured[1].parse().unwrap(),
+                from: captured[2].parse().unwrap(),
+                to: captured[3].parse().unwrap(),
+            }
+        })
+        .collect()
 }
 
+static REGEX: Regex = Regex::new(r"^move (\d+) from (\d+) to (\d+)$").unwrap();
+
+#[derive(Debug)]
 struct Instruction {
     move_count: u32,
     from: usize,
