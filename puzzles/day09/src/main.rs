@@ -1,7 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 fn main() {
-    let instructions = include_str!("../test_input.txt")
+    let instructions = include_str!("../input.txt")
         .lines()
         .map(|line| line.split_once(" ").unwrap())
         .map(|(direction, steps)| (Direction::parse(direction), steps.parse::<i32>().unwrap()))
@@ -14,37 +14,46 @@ fn main() {
 fn second_solution(instructions: &[(Direction, i32)]) -> usize {
     let mut visited_set = HashSet::new();
     visited_set.insert((0, 0));
-    let mut rope_position = [(0, 0); 10];
+    let mut rope = [(0, 0); 10];
     for (direction, steps) in instructions {
-        println!("{:?} -> {}", direction, steps);
         for _ in 0..*steps {
-            let mut old_head = rope_position[0];
-            rope_position[0] = direction.determine_new_position(old_head);
-            for i in 0..rope_position.len() - 1 {
-                let new_head = rope_position[i];
-                let tail = rope_position[i + 1];
-                // println!(
-                //     "new_head: {:?}, old_head: {:?}, tail: {:?}",
-                //     new_head, old_head, tail
-                // );
-                // println!(
-                //     "should move tail {:?} -> new_head {:?} = {}",
-                //     tail,
-                //     new_head,
-                //     tail_should_move(tail, new_head)
-                // );
-                if tail_should_move(tail, new_head) {
-                    rope_position[i + 1] = old_head;
-                }
-                old_head = tail;
-            }
-            println!("{:?}", rope_position);
-            *visited_set.entry(rope_position[9]).or_insert(1) += 1;
+            let new_head = direction.determine_new_position(rope[0]);
+            move_rope(&mut rope, new_head);
+            visited_set.insert(rope[9]);
         }
-        println!();
-        println!();
     }
     visited_set.len()
+}
+
+fn move_rope(rope: &mut [(i32, i32)], new_head: (i32, i32)) {
+    rope[0] = new_head;
+    for i in 0..rope.len() - 1 {
+        rope[i + 1] = determine_new_position(rope[i], rope[i + 1]);
+    }
+}
+
+fn determine_new_position(head: (i32, i32), tail: (i32, i32)) -> (i32, i32) {
+    if (head.0 - tail.0).abs() <= 1 && (head.1 - tail.1).abs() <= 1 {
+        return tail;
+    }
+    let mut new_tail = tail;
+    if head.0 == tail.0 {
+        new_tail.1 += plus_minus_one(head.1, tail.1);
+    } else if head.1 == tail.1 {
+        new_tail.0 += plus_minus_one(head.0, tail.0);
+    } else {
+        new_tail.0 += plus_minus_one(head.0, tail.0);
+        new_tail.1 += plus_minus_one(head.1, tail.1);
+    }
+    new_tail
+}
+
+fn plus_minus_one(head: i32, tail: i32) -> i32 {
+    if (head - tail).is_positive() {
+        1
+    } else {
+        -1
+    }
 }
 
 fn first_solution(instructions: &[(Direction, i32)]) -> usize {
