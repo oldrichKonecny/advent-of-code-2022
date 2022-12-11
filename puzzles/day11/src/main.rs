@@ -1,5 +1,3 @@
-use std::borrow::BorrowMut;
-
 #[cfg(not(target_os = "windows"))]
 const EMPTY_LINE_PATTERN: &str = "\n\n";
 #[cfg(target_os = "windows")]
@@ -34,14 +32,12 @@ fn simulate_rounds<F: Fn(u64) -> u64>(
     let mut monkey_inspect_count = vec![0; monkeys.len()];
     for _ in 0..rounds {
         for i in 0..monkeys.len() {
-            let mut items = monkeys[i].starting_items.drain(..).collect::<Vec<_>>();
+            let items = monkeys[i].starting_items.drain(..).collect::<Vec<_>>();
             monkey_inspect_count[i] += items.len();
             let throw_if_true = monkeys[i].throw_if_true;
             let throw_if_false = monkeys[i].throw_if_false;
-
             for worry_level in items.iter().rev() {
                 let mut worry_level = monkeys[i].operation.compute(*worry_level);
-                // worry_level = worry_level % common_divider;
                 worry_level = worry_level_modifier(worry_level);
                 if worry_level % monkeys[i].divisible_test == 0 {
                     monkeys[throw_if_true].starting_items.insert(0, worry_level);
