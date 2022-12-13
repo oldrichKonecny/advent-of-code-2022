@@ -1,16 +1,27 @@
 fn main() {
-    // let input = include_str!("../input.txt");
-    println!("Lets do this!");
+    let input = include_str!("../test_input.txt");
 }
 
+struct PacketPair {
+    left: Packet,
+    right: Packet,
+}
 
+enum Packet {
+    Val(u32),
+    List(Vec<Packet>),
+}
 
-#[cfg(test)]
-mod tests {
-
-    #[test]
-    fn test_example() {
-        assert_eq!(2, 1 + 1);
+impl PacketPair {
+    fn parse(str: &str) -> Self {
+        let mut lines = str.lines();
+        Self {
+            left: Packet::parse(lines.next().unwrap()),
+            right: Packet::parse(lines.next().unwrap()),
+        }
     }
+}
 
+impl Packet {
+    fn parse(line: &str) -> Self {}
 }
