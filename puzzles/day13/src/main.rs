@@ -6,11 +6,44 @@ const EMPTY_LINE_PATTERN: &str = "\n\n";
 const EMPTY_LINE_PATTERN: &str = "\r\n\r\n";
 
 fn main() {
-    let packet_pairs = include_str!("../test_input.txt")
+    let packet_pairs = include_str!("../input.txt")
         .split(EMPTY_LINE_PATTERN)
         .map(PacketPair::parse)
-        // .inspect(|pp| println!("{:?}\n{:?}", pp.left, pp.right))
         .collect::<Vec<_>>();
+
+    println!("First part: {}", first_solution(&packet_pairs));
+    println!("Second part: {}", second_solution(packet_pairs));
+}
+
+fn second_solution(packet_pairs: Vec<PacketPair>) -> usize {
+    let divider2 = Packet::List(vec![Packet::Val(2)]);
+    let divider6 = Packet::List(vec![Packet::Val(6)]);
+
+    let mut packets = packet_pairs
+        .into_iter()
+        .flat_map(|pp| [pp.left, pp.right])
+        .collect::<Vec<_>>();
+    packets.push(divider2.clone());
+    packets.push(divider6.clone());
+
+    packets.sort();
+
+    packets
+        .into_iter()
+        .enumerate()
+        .filter(|(_, p)| *p == divider2 || *p == divider6)
+        .map(|(index, _)| index + 1)
+        .reduce(|acc, val| acc * val)
+        .unwrap()
+}
+
+fn first_solution(packet_pairs: &[PacketPair]) -> usize {
+    packet_pairs
+        .iter()
+        .enumerate()
+        .filter(|(_, pp)| pp.left < pp.right)
+        .map(|(index, _)| index + 1)
+        .sum::<usize>()
 }
 
 #[derive(Debug)]
@@ -19,7 +52,7 @@ struct PacketPair {
     right: Packet,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Eq, Ord)]
 enum Packet {
     Val(u32),
     List(Vec<Packet>),
@@ -67,8 +100,8 @@ impl PartialEq<Self> for Packet {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::Val(x), Self::Val(y)) => *x == *y,
-            (Self::Val(x), Self::List(l)) => l.len() == 1 && l[0] == *self,
-            (Self::List(l), Self::Val(x)) => l.len() == 1 && l[0] == *self,
+            (Self::Val(_), Self::List(l)) => l.len() == 1 && l[0] == *self,
+            (Self::List(l), Self::Val(_)) => l.len() == 1 && l[0] == *other,
             (Self::List(l1), Self::List(l2)) => {
                 l1.len() == l2.len() && {
                     for i in 0..l1.len() {
@@ -79,7 +112,6 @@ impl PartialEq<Self> for Packet {
                     true
                 }
             }
-            _ => panic!("Dude, this partial_eq should be unreachable.."),
         }
     }
 }
@@ -92,27 +124,70 @@ impl PartialOrd for Packet {
                 if l.is_empty() {
                     return Some(Ordering::Greater);
                 }
-                let ord = self.partial_cmp(*l[0]);
+                let ord = self.partial_cmp(&l[0]);
                 if l.len() == 1 {
                     ord
                 } else if ord.is_some() && ord.unwrap() == Ordering::Equal {
                     Some(Ordering::Less)
                 } else {
-                    Some(Ordering::Less)
+                    ord
                 }
             }
-            (Self::List(l), Self::Val(_)) => l[0].partial_cmp(other),
+            (Self::List(l), Self::Val(_)) => {
+                if l.is_empty() {
+                    return Some(Ordering::Less);
+                }
+                let ord = l[0].partial_cmp(other);
+                if l.len() == 1 {
+                    ord
+                } else if ord.is_some() && ord.unwrap() == Ordering::Equal {
+                    Some(Ordering::Greater)
+                } else {
+                    ord
+                }
+            }
             (Self::List(l1), Self::List(l2)) => {
-                l1.len() == l2.len() && {
-                    for i in 0..l1.len() {
-                        if *l1[i] != *l2[i] {
-                            return false;
-                        }
+                for i in 0..l1.len().min(l2.len()) {
+                    let ord = l1[i].partial_cmp(&l2[i]);
+                    if ord != Some(Ordering::Equal) {
+                        return ord;
                     }
-                    true
+                }
+                if l1.len() > l2.len() {
+                    Some(Ordering::Greater)
+                } else if l1.len() < l2.len() {
+                    Some(Ordering::Less)
+                } else {
+                    Some(Ordering::Equal)
                 }
             }
-            _ => panic!("Dude, this partial_ord should be unreachable.."),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Packet;
+
+    #[test]
+    fn packet2_equal_test() {
+        let packet2 = Packet::List(vec![Packet::Val(2)]);
+
+        let packet_list_list_0 = Packet::List(vec![Packet::List(vec![Packet::Val(0)])]);
+        let packet_list_list_8 = Packet::List(vec![Packet::List(vec![Packet::Val(8)])]);
+
+        assert_ne!(packet2, packet_list_list_0);
+        assert_ne!(packet2, packet_list_list_8);
+    }
+
+    #[test]
+    fn packet6_equal_test() {
+        let packet6 = Packet::List(vec![Packet::Val(6)]);
+
+        let packet_list_list_0 = Packet::List(vec![Packet::List(vec![Packet::Val(0)])]);
+        let packet_list_list_8 = Packet::List(vec![Packet::List(vec![Packet::Val(8)])]);
+
+        assert_ne!(packet6, packet_list_list_0);
+        assert_ne!(packet6, packet_list_list_8);
     }
 }
