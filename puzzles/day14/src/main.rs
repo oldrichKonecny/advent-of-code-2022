@@ -46,10 +46,6 @@ fn single_sand_fall(
         let expected_position = (position.0, position.1 + 1);
         //check bound
         if bound < expected_position.1 {
-            // println!(
-            //     "returning None (because of bound check) bound: {}, exp pos: {},{}",
-            //     bound, expected_position.0, expected_position.1
-            // );
             return match bound_as_floor {
                 true => Some(position),
                 false => None,
@@ -65,7 +61,6 @@ fn single_sand_fall(
                 position = (expected_position.0 + 1, expected_position.1);
                 continue;
             } else {
-                // println!("returning Some({:?})", position);
                 return Some(position);
             }
         }
