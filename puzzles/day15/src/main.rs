@@ -1,5 +1,6 @@
 use once_cell::sync::Lazy;
 use regex::Regex;
+use std::time::Instant;
 
 static REGEX: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"^Sensor at x=(-?\d+), y=(-?\d+): closest beacon is at x=(-?\d+), y=(-?\d+)$")
@@ -7,11 +8,43 @@ static REGEX: Lazy<Regex> = Lazy::new(|| {
 });
 
 fn main() {
-    let mut intervals = include_str!("../input.txt")
+    let start = Instant::now();
+    let sensors = include_str!("../input.txt")
         .lines()
         .map(Sensor::parse)
+        .collect::<Vec<_>>();
+
+    println!("First res: {}", first_solution(&sensors));
+    let sec_sol = second_solution(&sensors)
+        .map(|(x, y)| x as i64 * 4_000_000 + y as i64)
+        .unwrap();
+    println!("Second part: {}", sec_sol);
+
+    let end = start.elapsed();
+    println!("Duration:");
+    println!("\t{} ms", end.as_millis());
+    println!("\t{} us", end.as_micros());
+    println!("\t{} ns", end.as_nanos());
+}
+
+fn second_solution(sensors: &[Sensor]) -> Option<(i32, i32)> {
+    for sensor in sensors {
+        let borders = sensor.get_outer_border();
+        for border in borders {
+            if !sensors.iter().any(|sen| sen.contains(border)) {
+                return Some(border);
+            }
+        }
+    }
+    None
+}
+
+fn first_solution(sensors: &[Sensor]) -> i32 {
+    let mut intervals = sensors
+        .iter()
         .flat_map(|sensor| sensor.interval_on_y(2_000_000)) //10
         .collect::<Vec<_>>();
+
     intervals.sort_by(|a, b| a.0.cmp(&b.0));
 
     let mut unique_intervals = Vec::new();
@@ -27,13 +60,9 @@ fn main() {
         }
     }
 
-    println!("{:?}", unique_intervals);
-
-    let res = unique_intervals
+    unique_intervals
         .iter()
-        .fold(0, |acc, val| acc + ((val.1 - val.0) + 1));
-
-    println!("First res: {}", res);
+        .fold(0, |acc, val| acc + ((val.1 - val.0) + 1))
 }
 
 #[derive(Debug)]
@@ -72,6 +101,41 @@ impl Sensor {
             }
             Some((left, right))
         }
+    }
+
+    fn get_outer_border(&self) -> Vec<(i32, i32)> {
+        fn check_boundaries(point: (i32, i32)) -> bool {
+            let (a, b) = point;
+            (a >= 0 && a <= 4_000_000) && (b >= 0 && b <= 4_000_000)
+        }
+        let (s_x, s_y) = self.coordinates;
+        let mut res = Vec::new();
+
+        let j = self.radius + 1;
+        for i in 0..=j {
+            let p1 = (s_x + i, s_y + (j - i));
+            let p2 = (s_x + i, s_y - (j - i));
+            let p3 = (s_x - i, s_y + (j - i));
+            let p4 = (s_x - i, s_y - (j - i));
+            if check_boundaries(p1) {
+                res.push(p1);
+            }
+            if check_boundaries(p2) {
+                res.push(p2);
+            }
+            if check_boundaries(p3) {
+                res.push(p3);
+            }
+            if check_boundaries(p4) {
+                res.push(p4);
+            }
+        }
+        res
+    }
+
+    fn contains(&self, point: (i32, i32)) -> bool {
+        let (x, y) = self.coordinates;
+        self.radius >= (x - point.0).abs() + (y - point.1).abs()
     }
 }
 
@@ -113,5 +177,23 @@ mod tests {
         assert_eq!(sensor.interval_on_y(17), None);
         assert_eq!(sensor.interval_on_y(100), None);
         assert_eq!(sensor.interval_on_y(-500), None);
+    }
+
+    #[test]
+    fn sensor_get_borders_test() {
+        let sensor = Sensor::parse("Sensor at x=10, y=10: closest beacon is at x=5, y=5");
+
+        let borders = sensor.get_outer_border();
+        println!("{:?}", borders);
+    }
+
+    #[test]
+    fn sensor_contains_test() {
+        let sensor = Sensor::parse("Sensor at x=10, y=10: closest beacon is at x=5, y=5");
+
+        let borders = sensor.get_outer_border();
+        for border in borders {
+            assert_eq!(sensor.contains(border), false);
+        }
     }
 }
